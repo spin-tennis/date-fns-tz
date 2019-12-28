@@ -35,6 +35,68 @@ Libraries like Moment and Luxon, which provide their own date time classes, mana
 zone values internally. Sine `date-fns` always returns a plain JS Date, which implicitly has the current
 system's time zone, helper functions are provided for handling common time zone related use cases.
 
+### `parseUTC`
+
+Parse a date string representing UTC time to a `Date` instance. This is a reexport of `date-fns/parseJSON`
+with a more semantically relevant name.
+
+### `localToZonedTime`
+
+Transform a `Date` instance in the local system time zone, i.e. when it is passed to `format` it would show
+the local time, to a zoned `Date` instance of the target time zone, i.e. when passed to `format` it would
+show the equivalent time in that time zone.
+
+*This is achieved by modifying the underlying timestamp of the `Date`. In other words, since a JS `Date` can
+only ever be in the system time zone, the way to fake another time zone is to change the timestamp.*
+
+Matching the convention set by `date-fns` this function does not accept string arguments. A date string should
+be parsed with `parseUTC`, `parseISO` or `parse` first.
+
+### `zonedToLocalTime`
+
+Transform a `Date` instance representing the time in some time zone other than the local system time zone to
+a `Date` instance with the equivalent value in the local system time zone, i.e. formatting the result or calling
+`.toString()` will show the equivalent local time.
+
+*This is achieved by modifying the underlying timestamp of the `Date`. It is the inverse of `localToZonedTime`,
+so in this case it is assumed the input is faking another time zone, and the timestamp is changed to be correct
+in the current local time zone.*
+
+Matching the convention set by `date-fns` this function does not accept string arguments. A date string should
+be parsed with `parse` first.
+
+### `utcToZonedTime`
+
+This is an alias of `localToZonedTime` which can be used when it makes better semantic sense, such as when a
+UTC date received from an API is being parsed for display in a targed time zone. *Since a UTC time will usually
+be provided as a string value, this function accepts UTC date strings that can be parsed by the `parseUTC`
+function and does so internally.*
+
+### `zonedTimeToUTC`
+
+This is an alias of `zonedToLocalTime` which can be used when it makes better semantic sense, such as when the
+intent is to save the UTC time of a date to an API. The resulting `Date` which formats correctly in the system
+time zone has the desired internal UTC time, and thus the actual UTC value can be obtained from
+`zonedTimeToUTC(...).toISOString()` or `.getTime()`.
+
+### `format`
+
+Full time zone formatting support, without any modification to the date instance. (No changes from `format` in
+v1, except that it will no longer accept string inputs.)
+
+### `formatAsZonedTime`
+
+A combination of `utcToZonedTime` (or `localToZonedTime`) and `format`. In other words the date will be
+transformed to the target time zone specified in the options prior to formatting. Since `utcToZonedTime` is
+used internally the date argument can also be a string that can be parsed by `parseUTC`.
+
+### `parseISO`
+
+As in `date-fns` the previous implementation of `toDate` in `date-fns-tz@1` has been renamed to `parseISO`.
+It extends the `date-fns` version of this function with better time zone support. It is a rather large
+function, though, and should only be used when dates are not in ISO format or date strings represent a
+time zone other than UTC time. When this is not the case `parseUTC` should be used instead.
+
 ## Time Zone Helpers
 
 To discuss the usage of the time zone helpers let's assume we're writing a system where administrators set
@@ -175,9 +237,6 @@ with
 
 The idea of using the Intl API for time zone support was inspired by the [Luxon](https://github.com/moment/luxon)
 library.
-
-The initial port of the idea into date-fns was done by [@benmccan](https://github.com/benmccann) in
-[date-fns/#676](https://github.com/date-fns/date-fns/pull/676).
 
 ## License
 
